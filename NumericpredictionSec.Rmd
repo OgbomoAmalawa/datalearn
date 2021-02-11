@@ -1,0 +1,319 @@
+---
+title: "secuirity"
+author: "OGBOMO O AMALAWA"
+date: "05/06/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(readr)
+library(tibble)
+library(tidyverse)
+library(data.table)
+library(dbplyr)
+library(ggplot2)
+library(lubridate)
+library(corrplot)
+library(Hmisc)
+library(tidyr)
+library(naniar)
+library(ISwR)
+library(GGally)
+library(cdata)
+library(wrapr)
+library(stringr)
+library(editrules)
+library(VIM)
+library(ggpubr)
+library(ggrepel)
+library( ggsci)
+library(cowplot)
+library(grDevices)
+library(plogr)
+library(ggcorrplot)
+library(ggbiplot)
+library(openxlsx)
+library(rio)
+library(MASS)
+library(tidyselect)
+
+Threats<-read.csv("C:/Users/aoogb/Desktop/clean/AvSigversion_Threats.csv", stringsAsFactors = TRUE)
+Threats
+# We set the Alert level column to the values 1 , 3 and 5, for moderate , high and severe respectively 
+#we set the type column of type, added Threat to 1 and updated threat to 2 
+
+Threats<-Threats%>%mutate(AlertLevel=case_when(
+    AlertLevel=="moderate" ~ 1,
+    AlertLevel=="high" ~ 3,
+    AlertLevel=="severe" ~ 5,
+      ))
+Threats
+
+Threats<-Threats%>%mutate(Type=case_when(
+   Type=="UpdatedThreats" ~ 2,
+    Type=="AddedThreats" ~ 1,
+      ))
+Threats
+
+Threats$Name
+
+#we check for duplicate Names because we only use the unique malaware names, which is 41,062
+duplicated(Threats$Name)
+
+Threats<-Threats %>% distinct()
+str(Threats)
+str(Threats$Name)
+#str(Threats$AvSigVersion)
+
+#Threats<-Threats %>% distinct(AvSigVersion, .keep_all =TRUE)
+#Threats
+
+Threats<-Threats %>% distinct(Name, .keep_all =TRUE)
+Threats
+
+# we drop the index row 
+Threats<-dplyr::select(Threats, -index)
+Threats
+
+# we convert the this column from factor to numeric to give the unique versions  unique numbers 
+Threats$Name
+Threats$AvSigVersion<-as.factor(Threats$AvSigVersion)
+Threats$AvSigVersion<-as.numeric(Threats$AvSigVersion)
+Threats$AvSigVersion
+Threats
+str(Threats$AvSigVersion)
+
+#We do the same for names 
+Threats$Name<-as.factor(Threats$Name)
+Threats$Name<-as.numeric(Threats$Name)
+Threats
+#we have a new csv and we use this for machine learning 
+Threats
+```
+
+
+```{r}
+Threats
+Threats$Name
+str(Threats$Name)
+summary(Threats$Name)
+ggplot(Threats, aes(x = Name)) +
+        geom_density(colour = "green", fill = "#56B4E9") +
+        scale_x_continuous(name = "Plot of Name identity",
+                           breaks = seq(-5000,45000, 8000),
+                           limits=c(-5000, 45000)) +
+        scale_y_continuous(name = "Density") +
+        ggtitle("Density plot Name") +
+        theme(axis.line = element_line(size=1, colour = "black"))
+
+ggscatter(Threats, x = "Name", y = "AlertLevel", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Name plot", ylab = "Plot Alert Level")+
+          ggtitle("plot of Alet level against name")
+```
+```{r}
+Threats$AlertLevel
+summary(Threats$AlertLevel)
+ggplot(Threats, aes(x = AlertLevel)) +
+        geom_density(colour = "green", fill = "#56B4E9") +
+        scale_x_continuous(name = "Plot of Alert identity",
+                           breaks = seq(-3,6,2),
+                           limits=c(-3, 6)) +
+        scale_y_continuous(name = "Density") +
+        ggtitle("Density plot of Alert") +
+        theme(axis.line = element_line(size=1, colour = "black"))
+
+ggplot(Threats, aes(AlertLevel)) +
+ ggtitle("Plot of AlertLevel")+
+ geom_bar(fill = "#0073C2FF") +
+ theme_pubclean()
+```
+
+
+```{r}
+Threats
+Threats$AvSigVersion
+Threats
+Threats$Name
+str(Threats$AvSigVersion)
+summary(Threats$AvSigVersion)
+ggplot(Threats, aes(x = AvSigVersion)) +
+        geom_density(colour = "green", fill = "#56B4E9") +
+        scale_x_continuous(name = "Plot of Name identity",
+                           breaks = seq(-500,8500, 500),
+                           limits=c(-500, 8500)) +
+        scale_y_continuous(name = "Density") +
+        ggtitle("Density plot Version") +
+        theme(axis.line = element_line(size=1, colour = "black"))
+
+ggscatter(Threats, x = "AvSigVersion", y = "AlertLevel", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "AvSigVersion plot", ylab = "Plot Alert Level")+
+          ggtitle("plot of Alet level against AvSigVersion")
+```
+
+
+```{r}
+
+
+hist(Threats$AlertLevel)
+
+# table of region
+table(Threats$AlertLevel)
+Threats
+# exploring relationships among features: correlation matrix
+ #correlation1=cor(Threats[c("Name","AlertLevel", "AvSigVersion", "Type")]
+ 
+ 
+# visualing relationships among features: scatterplot matrix
+#pairs(Threats[c("Name","AlertLevel", "AvSigVersion", "Type")])
+
+
+# more informative scatterplot matrix
+#install.packages(psych)
+#library(psych)
+#pairs.panels(Threats[c("Name","AlertLevel", "AvSigVersion", "Type")])
+#split your data
+#Threats$AlertLevel<-as.factor(Threats$AlertLevel)
+Threats<-Threats %>%dplyr::select(-AlertLevel ,AlertLevel)
+#Threats %>%dplyr::relocate(AlertLevel .after = last_col())
+#Threats%>%dplyr::select(-AlertLevel,everything())
+Threats
+summary(Threats)
+str(Threats)
+
+```
+
+```{r}
+library(caTools)
+library(rpart)     
+library(randomForest)
+library(lattice)
+library(e1071)  
+library(rpart)
+library(DMwR)
+set.seed(150)    
+split=sample.split(Threats, SplitRatio = 0.7)  # Splitting data into training and test dataset
+Trainingset=subset(Threats,split==TRUE)       # Training dataset
+Testset=subset(Threats,split==FALSE)          # Test dataset
+dim(Trainingset)
+str(Trainingset)
+dim(Testset)
+str(Testset)
+
+
+### We create a prediction class that excludes the Alert levels 
+predictiondata<-Testset[1:3]
+str(predictiondata)
+
+
+## Step 3: Training a model on the data ----
+model <- lm(AlertLevel ~ Name+ AvSigVersion + Type,
+                data = Trainingset)
+predictmodel <- lm(model, newdata=predictiondata, type = "class") # this is equivalent to above
+
+str(model)
+str(predictmodel)
+summary(model)
+summary(predictmodel)
+
+                
+```
+                
+                
+```{r}
+
+results <- data.frame(actual = Testset$DXCURREN, prediction = predictmodel)
+roundedresults<-sapply(results,round,digits=0)
+results
+roundedresults<-sapply(results,round,digits=0)
+roundedresultsdf=data.frame(roundedresults2)
+attach(roundedresultsdf)
+table(actual, prediction)
+
+accuracy = sum(predictmodel == Testset$AlertLevel)/length(Testset$AlertLevel)
+print(accuracy)
+
+
+
+
+# see the estimated beta coefficients
+ins_model
+
+## Step 4: Evaluating model performance ----
+# see more detail about the estimated beta coefficients
+summary(ins_model)
+
+## Step 5: Improving model performance ----
+
+# add a higher-order "age" term
+insurance$age2 <- insurance$age^2
+
+# add an indicator for BMI >= 30
+insurance$bmi30 <- ifelse(insurance$bmi >= 30, 1, 0)
+
+# create final model
+ins_model2 <- lm(expenses ~ age + age2 + children + bmi + sex +
+                   bmi30*smoker + region, data = insurance)
+
+summary(ins_model2)
+
+```
+
+
+
+
+```{r}
+hist(insurance$expenses)
+
+# table of region
+table(insurance$region)
+
+# exploring relationships among features: correlation matrix
+cor(insurance[c("age", "bmi", "children", "expenses")])
+
+# visualing relationships among features: scatterplot matrix
+pairs(insurance[c("age", "bmi", "children", "expenses")])
+
+# more informative scatterplot matrix
+library(psych)
+pairs.panels(insurance[c("age", "bmi", "children", "expenses")])
+
+## Step 3: Training a model on the data ----
+ins_model <- lm(expenses ~ age + children + bmi + sex + smoker + region,
+                data = insurance)
+ins_model <- lm(expenses ~ ., data = insurance) # this is equivalent to above
+
+# see the estimated beta coefficients
+ins_model
+
+## Step 4: Evaluating model performance ----
+# see more detail about the estimated beta coefficients
+summary(ins_model)
+
+## Step 5: Improving model performance ----
+
+# add a higher-order "age" term
+insurance$age2 <- insurance$age^2
+
+# add an indicator for BMI >= 30
+insurance$bmi30 <- ifelse(insurance$bmi >= 30, 1, 0)
+
+# create final model
+ins_model2 <- lm(expenses ~ age + age2 + children + bmi + sex +
+                   bmi30*smoker + region, data = insurance)
+
+summary(ins_model2)
+
+                     set.seed(150)    
+split=sample.split(seldata, SplitRatio = 0.7)  # Splitting data into training and test dataset
+trainingsel_set=subset(seldata,split==TRUE)       # Training dataset
+testsel_set=subset(seldata,split==FALSE)          # Test dataset
+dim(trainingsel_set)
+dim(testsel_set)
+
+```
